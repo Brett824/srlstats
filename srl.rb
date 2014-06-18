@@ -37,13 +37,13 @@ playerlist = []
 
 m = YAML.load(File.read('srl.txt'))
 
-players = {}
+players = Hash.new{|h, k| h[k] = []}
 
 count = 0
 
 names = {}
 
-categories = {}
+categories = Hash.new(0)
 
 biggest = -1
 biggestobj = nil
@@ -51,11 +51,7 @@ biggestobj = nil
 m["pastraces"].each do |p|
 
 	#count amount of race per category/goal
-	if categories[p["goal"]].nil?
-		categories[p["goal"]] = 1
-	else
-		categories[p["goal"]] += 1
-	end
+	categories[p["goal"]] += 1
 
 	#TODO: better goal selection!
 	#if p["goal"].include?("ballsofsteel") && p["goal"].include?("chest") #TODO: not hardcoded goals
@@ -69,14 +65,11 @@ m["pastraces"].each do |p|
 		end
 		#each player gets all their result objects in their own array in a hash table
 		p["results"].each do |r|
-			if players[r["player"]].nil?
-				players[r["player"]] = []
-				players[r["player"]].push r
-			else
-				players[r["player"]].push r
-			end
+			players[r["player"]] << r
 		end
+
 	end
+
 end
 
 #wins.sort_by { |n, w| w }
@@ -89,49 +82,21 @@ end
 
 players.each do |w,v|
 
-	#merge these all into one loop, eventually
-	#right now just seperate for clarity
-
 	#first place finish count
-	wins = v.inject(0) do |a, e|
-		if e["place"] == 1 
-			a+1
-		else
-			a
-		end
-	end
+	wins = v.count{|e| e["place"] == 1}
 
-	#count how many times the person didn't forfeit
-	finishes = 0
-	time = v.inject(0) do |a,e|
-		if e["place"] < 9998
-			finishes += 1
-			a + e["time"]
-		else
-			a
-		end
-	end
+	#we want to do stuff on only races where the person finished often, so put those in a seperate array
+	finished_races = v.select{|e| e["place"] < 9998}
+	finishes = finished_races.length
 
-	#find their fastest finish time
-	min  = 1.0/0.0
-	v.each do |e|
-		if e["place"] < 9998
-			if e["time"] < min 
-				min = e["time"]
-			end
-		end
-	end
-
-	#find true skill/rating difference in the current set of races
-	diff = 0
-	v.each do |e|
-		diff += e["trueskillchange"]
-	end
-
-	#if they didnt finish ignore em
+	#skip em if they never finished
 	if finishes == 0 
 		next 
 	end
+
+	time = finished_races.inject(0){|a,e| a + e["time"]}
+	min = finished_races.min_by{|e| e["time"]}["time"]
+	diff = v.inject(0){|a,e| a + e["trueskillchange"]}
 
 	#create a new player object for the player's stats
 	#a constructor looked really messy, broke it into individual lines
@@ -146,12 +111,7 @@ players.each do |w,v|
 	p1.tsdif = diff
 
 	#calculate standard deviation
-	stdsum = 0
-	v.each do |e|
-		if e["place"] < 9998
-			stdsum += (e["time"] - p1.avg) ** 2
-		end
-	end
+	stdsum = finished_races.inject(0) { |a,e| a + (e["time"] - p1.avg) ** 2 }
 	p1.stdev = Math.sqrt(stdsum.to_f/finishes.to_f).to_i
 
 	playerlist.push p1
