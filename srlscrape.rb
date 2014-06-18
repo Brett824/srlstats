@@ -15,9 +15,26 @@ def generate_error(args, response)
 end
 
 #TODO: not hardcode the game, put stuff into functions, whatever.
-uri = URI.parse("http://api.speedrunslive.com/pastraces?game=isaac&page=1&season=0&pageSize=2607")
+#now properly find the total number of races so you can easily grab em all, previously was hardcoded
+starturi = URI.parse("http://api.speedrunslive.com/pastraces?game=isaac&page=1&season=0&pageSize=1")
 
-http = Net::HTTP.new(uri.host, uri.port)
+http = Net::HTTP.new(starturi.host, starturi.port)
+
+request = Net::HTTP::Get.new(starturi.request_uri)
+
+response = http.request(request)
+
+if response.class != Net::HTTPOK
+    
+    generate_error(ARGV, response)
+    
+end
+
+page = response.body
+
+racecount = JSON.parse(page)["count"]
+
+uri = URI.parse("http://api.speedrunslive.com/pastraces?game=isaac&page=1&season=0&pageSize=#{racecount}")
 
 request = Net::HTTP::Get.new(uri.request_uri)
 
@@ -32,5 +49,6 @@ end
 page = response.body
 
 obj = JSON.parse(page)
+
 
 File.open('srl.txt', 'w') {|f| f.write(YAML.dump(obj)) }

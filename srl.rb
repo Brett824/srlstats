@@ -3,6 +3,7 @@ require 'uri'
 require 'net/http'
 require 'net/https'
 require 'yaml'
+require 'time'
 
 #TODO: average time difference
 #1st and 2nd place completed, time diff
@@ -56,8 +57,11 @@ m["pastraces"].each do |p|
 		categories[p["goal"]] += 1
 	end
 
-	if p["goal"].include?("ballsofsteel") && p["goal"].include?("chest") #TODO: not hardcoded goals
-	#if p["goal"].include?("chest") 	&& !p["goal"].include?("balls") 
+	#TODO: better goal selection!
+	#if p["goal"].include?("ballsofsteel") && p["goal"].include?("chest") #TODO: not hardcoded goals
+	if p["goal"].include?("chest") && !p["goal"].include?("balls") 
+	#if p["goal"].downcase == "beat mom's heart/it lives" && p["date"].to_i > 1396310400 
+
 		count += 1
 		if p["numentrants"] > biggest #track the biggest race
 			biggest = p["numentrants"]	
@@ -179,6 +183,7 @@ end
 
 #output
 puts "Overall:"
+puts "\t#{count} races total!"
 puts "\tAverage: #{proper_time(total_time/total_finishes)}"
 puts "\tStd. Dev.: #{proper_time(Math.sqrt(stdsum/total_finishes).to_i)}"
 puts "\tForfeit %: #{100 - ((total_finishes.to_f / total_results.to_f) * 100).round(2)}"
