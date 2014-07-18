@@ -33,6 +33,31 @@ class Player
 
 end
 
+def head_to_head(players, p1, p2)
+
+	p1wins = 0
+	p2wins = 0
+	draws = 0
+	players[p1].each do |e|
+		players[p2].each do |f|
+			if e["race"] == f["race"]
+				if e["place"] < f["place"]
+					p1wins += 1
+				elsif e["place"] >> f["place"]
+					p2wins += 1
+				else
+					draws += 1
+				end
+			end
+		end
+	end
+
+	puts "#{p1}: #{p1wins} #{p2}: #{p2wins} draws: #{draws}"
+
+	return [p1wins, p2wins, draws]
+
+end
+
 playerlist = []
 
 m = YAML.load(File.read('srl.txt'))
@@ -51,11 +76,12 @@ biggestobj = nil
 m["pastraces"].each do |p|
 
 	#count amount of race per category/goal
-	categories[p["goal"]] += 1
+	categories[p["goal"].downcase] += 1
 
 	#TODO: better goal selection!
 	#if p["goal"].include?("ballsofsteel") && p["goal"].include?("chest") #TODO: not hardcoded goals
-	if p["goal"].include?("chest") && !p["goal"].include?("balls") 
+	#if p["goal"].include?("chest") && !p["goal"].include?("balls") 
+	if p["goal"].downcase.include?("bos2")
 	#if p["goal"].downcase == "beat mom's heart/it lives" && p["date"].to_i > 1396310400 
 
 		count += 1
@@ -72,7 +98,7 @@ m["pastraces"].each do |p|
 
 end
 
-#wins.sort_by { |n, w| w }
+#wins.sort_by { |n, w| w }	
 
 =begin
 categories.each do |k,v|
@@ -86,7 +112,8 @@ players.each do |w,v|
 	wins = v.count{|e| e["place"] == 1}
 
 	#we want to do stuff on only races where the person finished often, so put those in a seperate array
-	finished_races = v.select{|e| e["place"] < 9998}
+	finished_races = v.select{|e| e["place"] < 9998 }
+	#finished_races = v.select{|e| e["place"] < 9998 && e["time"] < 1800 }
 	finishes = finished_races.length
 
 	#skip em if they never finished
